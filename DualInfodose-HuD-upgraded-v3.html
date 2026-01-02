@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Dual.Navigator — Theme Enabled · Dual.Infodose</title>
+<link rel="icon" href="assets/icons/icon-192.png" type="image/png"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#2563eb">
+<link rel="apple-touch-icon" href="./icon-192.png">
+
+<script>
+  // registra service worker se disponível
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js')
+      .then(() => console.log('Service Worker Registered'))
+      .catch(()=>{/*silenciar*/});
+  }
+</script>
+
+<style>
+  /* ——— VARIÁVEIS DE TEMA (CSS INTEGRAL) ——— */
+  :root {
+    /* Tema Padrão (Dark) */
+    --bg: linear-gradient(to bottom, #000, #1a1a1a);
+    --text: #d7d7d7;
+    --panel-bg: rgba(0,0,0,0.3);
+    --card-bg: rgba(255,255,255,0.03);
+    --glass: rgba(255,255,255,0.05);
+    --muted: rgba(255,255,255,0.2);
+    --accent: #00ffff;
+    --fast: .35s; --med: .8s; --slow: 1.6s;
+  }
+
+  /* Variações de Tema */
+  body.light {
+      --bg: linear-gradient(to bottom, #e9eef2, #f6f9fb);
+      --text: #222;
+      --panel-bg: rgba(255,255,255,0.9);
+      --glass: rgba(0,0,0,0.03);
+      --muted: rgba(0,0,0,0.12);
+      --accent: #008888;
+  }
+  body.medium {
+      --bg: linear-gradient(to bottom, #32343a, #4b4f55);
+      --text: #eee;
+      --panel-bg: rgba(0,0,0,0.5);
+      --glass: rgba(255,255,255,0.06);
+      --muted: rgba(255,255,255,0.18);
+      --accent: #00ffcc;
+  }
+  body.vibe {
+      --bg: linear-gradient(135deg, #2b002b, #001a1a);
+      --text: #fff;
+      --panel-bg: rgba(255,255,255,0.06);
+      --glass: rgba(255,255,255,0.04);
+      --muted: rgba(255,0,255,0.22);
+      --accent: #ff00ff;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;height:100%;overflow:hidden}
+  body{
+    display:flex;flex-direction:column;align-items:center;
+    padding:0;background:var(--bg);color:var(--text);
+    font-family:'Montserrat',system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+    transition:background var(--slow),color var(--slow);
+    animation:fadeIn var(--slow) ease forwards;
+    -webkit-font-smoothing:antialiased;
+  }
+  @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+  /* iframe full */
+  iframe#frame{position:fixed;inset:0;width:100%;height:100%;border:0;background:#000;z-index:1;transition:opacity .28s ease}
+  iframe#frame.hidden{opacity:0}
+
+  /* central theme toggle */
+  #themeToggle {
+    position: absolute;
+    top: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--muted);
+    border-radius: 50%;
+    background: var(--glass);
+    color: var(--text);
+    cursor: pointer;
+    transition: all var(--med);
+    z-index: 10001;
+    display:flex;align-items:center;justify-content:center;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.25);
+    font-size:16px;
+  }
+  #themeToggle:hover{ box-shadow:0 0 26px rgba(0,255,255,0.08) }
+
+  /* symbol bar (right) */
+  .symbol-bar{
+      position:fixed;right:16px;top:44%;transform:translateY(-44%);
+      display:flex;flex-direction:column;gap:18px;z-index:60;
+      pointer-events:auto;
+  }
+  .symbol-button{
+      width:32px;height:32px;border-radius:10px;background:var(--card-bg);
+      border:1px solid var(--muted);color:var(--accent);
+      display:flex;align-items:center;justify-content:center;cursor:pointer;
+      backdrop-filter:blur(6px);font-size:16px;transition:transform .16s ease,box-shadow .16s ease;
+  }
+  .symbol-button:hover{ transform:translateX(-6px) scale(1.06); box-shadow:0 12px 30px rgba(0,255,255,0.06); }
+
+  /* left tools (vertical) */
+  .left-tools{ position:fixed; left:16px; top:28%; display:flex;flex-direction:column; gap:14px; z-index:70; }
+  .tool-btn{ width:36px; height:36px; border-radius:10px; background:var(--glass); border:1px solid var(--muted); color:var(--accent); display:flex; align-items:center; justify-content:center; cursor:pointer; backdrop-filter:blur(6px); transition:transform .14s ease }
+  .tool-btn:hover{ transform:translateX(6px) }
+
+  /* bottom footer dots */
+  .footer-dots { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); display:flex; gap:14px; z-index:120; }
+  .dot { border-radius:50%; border:1px solid var(--accent); background:rgba(255,255,255,.03); width:14px; height:14px; cursor:pointer; transition:transform .18s ease, background .18s ease }
+  .dot.small{ width:10px; height:10px; opacity:.85 }
+  .dot.main{ width:18px; height:18px; box-shadow:0 6px 20px rgba(0,255,255,0.06) }
+  .dot:hover{ transform:scale(1.4); background:var(--accent) }
+
+  /* toast */
+  #toast{ position:fixed; left:50%; top:12px; transform:translateX(-50%); padding:8px 12px; border-radius:8px; background:rgba(0,0,0,0.6); color:var(--accent); font-family:monospace; z-index:200; display:none; pointer-events:none }
+
+  /* decoder modal */
+  #decoderBox{position:fixed;left:50%;top:16%;transform:translateX(-50%);background:rgba(0,0,0,0.8);padding:12px;border-radius:12px;backdrop-filter:blur(6px);z-index:90;display:none}
+  #decoderBox input{padding:8px;border-radius:8px;border:1px solid var(--muted);background:transparent;color:var(--text);min-width:220px}
+
+  /* debug pulses */
+  #pulsos-container{position:fixed;left:50%;top:22%;transform:translateX(-50%);max-width:720px;width:80%;z-index:30;pointer-events:none;
+display:none;
+}
+  #pulsos{pointer-events:auto;background:rgba(0,0,0,0.45);padding:8px;border-radius:10px;max-height:240px;overflow:auto;color:var(--accent);font-family:monospace;font-size:13px}
+  #pulsos .debug{padding:6px 8px;border-bottom:1px dashed rgba(255,255,255,0.03);opacity:.95}
+
+  /* modal web-component (shadowed) handled later */
+
+  /* responsive */
+  @media(max-width:700px){
+      .symbol-bar{right:8px;top:38%}
+      .left-tools{left:8px}
+      #themeToggle{top:14px}
+      #pulsos{max-height:140px}
+  }
+</style>
+</head>
+<body>
+
+<!-- main iframe -->
+<iframe id="frame" src="./index.html" title="Dual.Navigator frame"></iframe>
+
+<!-- central theme toggle -->
+<button id="themeToggle" title="Alternar tema: Dark / Light / Medium / Vibe" aria-pressed="false">
+  <i class="fa-solid fa-circle-half-stroke" aria-hidden></i>
+</button>
+
+<!-- right symbol bar -->
+<div class="symbol-bar" aria-hidden="true">
+  <button class="symbol-button" data-url="about:blank" title="Blank">Φ</button>
+  <button class="symbol-button" data-url="https://kodux78k.github.io/oiDual-Vivivi-1/" title="Vivivi">꩜</button>
+  <button class="symbol-button" data-url="https://kodux78k.github.io/oiDual-KxT/" title="KxT">◌</button>
+  <button class="symbol-button" data-url="https://kodux78k.github.io/NosSolar-dualInfodose/" title="Nosolar">☼</button>
+  <button class="symbol-button" data-url="https://kodux78k.github.io/DualHubjhbarros/" title="JHBarros">◑</button>
+  <button class="symbol-button" data-url="https://kodux78k.github.io/info-Doc/index.html" title="InfoDoc">◘</button>
+  <button class="symbol-button" data-url="https://kodux78k.github.io/DualInfodose-VirgemHuB/index.html" title="Atelie">◧</button>
+</div>
+
+<!-- left tools -->
+<div class="left-tools" role="toolbar" aria-label="Ferramentas">
+  <button id="uploadBtn" class="tool-btn" title="Upload .html" aria-label="Upload HTML"><i class="fa-solid fa-file-import" aria-hidden></i></button>
+  <input id="uploadHTML" type="file" accept=".html" style="display:none">
+  <button id="remoteBtn" class="tool-btn" title="Abrir URL remota" aria-label="Abrir remoto"><i class="fa-solid fa-globe" aria-hidden></i></button>
+  <button id="decoderToggle" class="tool-btn" title="Decoder" aria-label="Abrir decodificador"><i class="fa-solid fa-key" aria-hidden></i></button>
+  <button id="ritualBtn" class="tool-btn" title="Ritual Visual" aria-label="Ritual Visual"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden></i></button>
+</div>
+
+<!-- footer dots -->
+<div class="footer-dots" aria-hidden="true">
+  <div id="dot-index" class="dot small" title="Indexer (carrega index.html)"></div>
+  <div id="dot-base" class="dot main" title="Base Ritual (reset sem trocar src)"></div>
+  <div id="dot-last" class="dot small" title="Última página (last page)"></div>
+</div>
+
+<!-- toast -->
+<div id="toast" aria-live="polite" role="status"></div>
+
+<!-- decoder box -->
+<div id="decoderBox" aria-hidden="true">
+  <div style="display:flex;gap:8px;align-items:center;">
+    <input id="codeInput" placeholder="Selo (ex: DUAL)" aria-label="Selo" />
+    <button id="decodeBtn" class="tool-btn" title="Abrir selo">Abrir</button>
+    <button id="closeDecoder" class="tool-btn" title="Fechar decodificador">✖</button>
+  </div>
+</div>
+
+<!-- pulses (debug/log) -->
+<div id="pulsos-container" aria-hidden="true">
+  <div id="pulsos" role="log" aria-live="polite"></div>
+</div>
+
+<!-- lightweight web component modal for remote/local pages -->
+<script>
+  class MyFrameLoader extends HTMLElement {
+    constructor(){
+      super();
+      this.attachShadow({mode:'open'});
+      this.shadowRoot.innerHTML = `
+        <style>
+          .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;z-index:99999}
+          .box{width:92%;height:86%;background:var(--box-bg, #071017);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.6)}
+          .top{display:flex;justify-content:flex-end;padding:8px;background:linear-gradient(to bottom, rgba(255,255,255,0.02), transparent)}
+          button{background:transparent;border:0;color:var(--btn-color,#fff);font-size:18px;cursor:pointer;padding:6px}
+          iframe{flex:1;border:0;width:100%;height:100%;background:#000}
+        </style>
+        <div class="overlay" part="overlay">
+          <div class="box" part="box">
+            <div class="top"><button class="close" title="Fechar modal">✖</button></div>
+            <iframe sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+          </div>
+        </div>`;
+      this.iframe = this.shadowRoot.querySelector('iframe');
+      this.shadowRoot.querySelector('.close').onclick = ()=> this.remove();
+    }
+    set src(v){ this.iframe.src = v; }
+  }
+  customElements.define('my-frame-loader', MyFrameLoader);
+</script>
+
+<script>
+(function(){
+  const THEME_KEY = 'infodoseTheme';
+  const STORAGE_KEY = 'dual_last';
+  const frame = document.getElementById('frame');
+  const toast = document.getElementById('toast');
+  const themeBtn = document.getElementById('themeToggle');
+  const uploadInput = document.getElementById('uploadHTML');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const remoteBtn = document.getElementById('remoteBtn');
+  const ritualBtn = document.getElementById('ritualBtn');
+  const decoderToggle = document.getElementById('decoderToggle');
+  const decoderBox = document.getElementById('decoderBox');
+  const decodeBtn = document.getElementById('decodeBtn');
+  const closeDecoder = document.getElementById('closeDecoder');
+  const codeInput = document.getElementById('codeInput');
+  const pulsos = document.getElementById('pulsos');
+
+  // Mapa de selos do decoder (expanda conforme necessário)
+  const CODE_MAP = {
+    "DUAL":"menu.html",
+    "KBX":"menu-x-1.html",
+    "ATVR":"render-response.html",
+    "337":"KOBLLUX_MetaLux_CLEANED.html"
+  };
+
+  // util: mostrar toast
+  function showToast(msg, ms=900){
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=> toast.style.display='none', ms);
+  }
+
+  // util: log místico/pulsos
+  function logMistico(msg){
+    const el = document.createElement('div');
+    el.className = 'debug';
+    el.textContent = '◉ ' + msg;
+    pulsos.prepend(el);
+    // auto-trim
+    while(pulsos.children.length > 80) pulsos.removeChild(pulsos.lastChild);
+  }
+
+  // Apply theme
+  function applyTheme(theme) {
+    document.body.classList.remove('light','medium','vibe');
+    if (theme !== 'dark') document.body.classList.add(theme);
+    themeBtn.title = `Tema atual: ${theme.toUpperCase()}`;
+    themeBtn.setAttribute('aria-pressed', String(theme !== 'dark'));
+    // clique animado
+    themeBtn.style.transform = "translateX(-50%) scale(0.92)";
+    setTimeout(()=> themeBtn.style.transform = "translateX(-50%) scale(1)", 200);
+  }
+
+  function toggleTheme() {
+    const order = ['dark','light','medium','vibe'];
+    const cur = localStorage.getItem(THEME_KEY) || 'dark';
+    const next = order[(order.indexOf(cur) + 1) % order.length];
+    localStorage.setItem(THEME_KEY, next);
+    applyTheme(next);
+    showToast('Tema → ' + next, 800);
+  }
+
+  // Inicializa tema salvo
+  (function initTheme(){
+    const saved = localStorage.getItem(THEME_KEY) || 'dark';
+    applyTheme(saved);
+    themeBtn.addEventListener('click', toggleTheme);
+  })();
+
+  // Set main iframe src with fade & optional persist
+  function setFrameSrc(url, persist=true){
+    if(!url) return;
+    let final = url;
+    // keep absolute URL if protocol present; otherwise use as-is (could be blob or relative)
+    try {
+      if(!/^[a-zA-Z]+:\/\//.test(final)) final = final;
+    } catch(e){}
+    frame.classList.add('hidden');
+    setTimeout(()=> {
+      frame.src = final;
+      frame.onload = ()=> frame.classList.remove('hidden');
+    }, 220);
+    if(persist){
+      try { localStorage.setItem(STORAGE_KEY, final); } catch(e){}
+    }
+    showToast('Carregado → ' + (final.length>48 ? final.slice(0,44)+'…' : final));
+  }
+
+  // Symbol buttons
+  document.querySelectorAll('.symbol-button').forEach(btn=>{
+    const url = btn.dataset.url;
+    btn.addEventListener('click', ()=> setFrameSrc(url, true));
+    btn.addEventListener('contextmenu', e=>{
+      e.preventDefault();
+      window.open(url, '_blank');
+    });
+  });
+
+  // Upload local: preview in modal or load directly if user chooses
+  uploadBtn.addEventListener('click', ()=> uploadInput.click());
+  uploadInput.addEventListener('change', e=>{
+    const f = e.target.files && e.target.files[0];
+    if(!f) return;
+    if(!f.name.endsWith('.html')) return alert('Selecione um arquivo .html');
+    const r = new FileReader();
+    r.onload = ev=>{
+      const blob = new Blob([ev.target.result], {type:'text/html'});
+      const url = URL.createObjectURL(blob);
+      // abre em modal preview
+      const modal = document.createElement('my-frame-loader');
+      modal.src = url;
+      document.body.appendChild(modal);
+      logMistico('Preview local: ' + f.name);
+    };
+    r.readAsText(f);
+  });
+
+  // remote open in modal
+  remoteBtn.addEventListener('click', ()=>{
+    const url = prompt('Cole a URL do componente remoto:');
+    if(!url) return;
+    const modal = document.createElement('my-frame-loader');
+    modal.src = url;
+    document.body.appendChild(modal);
+    logMistico('Aberto remoto: ' + url);
+  });
+
+  // ritual button
+  ritualBtn.addEventListener('click', ()=> {
+    showToast('Ritual visual ativado', 900);
+    logMistico('Ritual acionado');
+  });
+
+  // footer dots
+  document.getElementById('dot-index').addEventListener('click', ()=>{
+    showToast('Indexer → index.html', 800);
+    setFrameSrc('index.html', true);
+  });
+  document.getElementById('dot-base').addEventListener('click', ()=>{
+    showToast('Base Ritual (reset)', 700);
+    try { frame.contentWindow.postMessage({type:'DUAL_RESET_STATE'}, '*'); } catch(e){}
+    frame.classList.add('hidden');
+    setTimeout(()=> frame.classList.remove('hidden'), 160);
+    logMistico('Base reset enviada via postMessage');
+  });
+  document.getElementById('dot-last').addEventListener('click', ()=>{
+    const last = localStorage.getItem(STORAGE_KEY);
+    if(last){ setFrameSrc(last, true); }
+    else showToast('Nenhuma última página salva', 900);
+  });
+
+  // preserve last page on load of iframe
+  frame.addEventListener('load', ()=>{
+    try {
+      const href = frame.contentWindow && frame.contentWindow.location && frame.contentWindow.location.href;
+      if(href && href.indexOf(location.origin) === 0){
+        localStorage.setItem(STORAGE_KEY, href);
+      } else {
+        localStorage.setItem(STORAGE_KEY, frame.src);
+      }
+    } catch(e){
+      try { localStorage.setItem(STORAGE_KEY, frame.src); } catch(_) {}
+    }
+  });
+
+  // decoder toggle and logic
+  decoderToggle.addEventListener('click', ()=>{
+    const showing = decoderBox.style.display === 'block';
+    decoderBox.style.display = showing ? 'none' : 'block';
+    decoderBox.setAttribute('aria-hidden', String(showing));
+  });
+  closeDecoder.addEventListener('click', ()=> decoderBox.style.display = 'none');
+  decodeBtn.addEventListener('click', ()=>{
+    const code = (codeInput.value || '').trim().toUpperCase();
+    if(!code) return alert('Digite o selo');
+    const dest = CODE_MAP[code];
+    if(dest){
+      const modal = document.createElement('my-frame-loader');
+      modal.src = dest;
+      document.body.appendChild(modal);
+      decoderBox.style.display = 'none';
+      logMistico('Selo válido: ' + code + ' → ' + dest);
+      showToast('Selo → ' + code, 800);
+    } else {
+      alert('Selo desconhecido.');
+      logMistico('Selo desconhecido: ' + code);
+    }
+  });
+
+  // simple postMessage integration for pulses from iframe (if desired)
+  window.addEventListener('message', e=>{
+    if(e.data?.type === 'iframeClick'){
+      const x = e.data.x, y = e.data.y;
+      logMistico('Pulso do iframe em ' + x + ',' + y);
+    }
+  });
+
+  // keyboard shortcuts
+  document.addEventListener('keydown', (ev)=>{
+    if (ev.key === 't' && (ev.ctrlKey || ev.metaKey)){
+      ev.preventDefault();
+      decoderBox.style.display = decoderBox.style.display === 'block' ? 'none' : 'block';
+    }
+    // quick-theme: ctrl/cmd + shift + T
+    if (ev.key.toLowerCase() === 't' && (ev.ctrlKey || ev.metaKey) && ev.shiftKey){
+      ev.preventDefault();
+      toggleTheme();
+    }
+  });
+
+  // init
+  (function init(){
+    logMistico('Dual.Navigator · Dual.Infodose inicializado');
+    const last = localStorage.getItem(STORAGE_KEY);
+    if(last) frame.src = last;
+    // trap errors quietly
+    window.addEventListener('error', (e)=> logMistico('Erro: ' + (e.message || 'unknown')));
+  })();
+
+})();
+</script>
+
+</body>
+</html>
