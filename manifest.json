@@ -1,0 +1,23 @@
+{
+  "name": "Dual.Navigator — Theme Enabled · Dual.Infodose",
+  "short_name": ".NavGaT3",
+  "description": "",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "any",
+      "type": "image/png"
+    },
+    {
+      "src": "./icon-192.png",
+      "sizes": "any",
+      "type": "image/png"
+    }
+  ]
+}
